@@ -14,7 +14,7 @@ BOTClassModifier::BOTClassModifier()
 
 BOT::BOT()
 {
-	int BotID = 0; // concstuctor for bot id
+	int BotID = 0; // constuctor for bot id
 }
 
 
