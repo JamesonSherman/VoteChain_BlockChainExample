@@ -3,10 +3,14 @@
 minor modifications made to sha256_k table for optimization and faster running speeds
 also minor upgrades to the way final method is called and implemented were done.
 */
+
+/*
+included comments for my own sanity
+*/
 #include <cstring>
 #include <fstream>
 #include "sha256.h"
-
+//unsigned integer table for turning and memory mapping locations. 
 const unsigned int SHA256::sha256_k[64] = //UL = uint32
 { 
 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -29,13 +33,14 @@ const unsigned int SHA256::sha256_k[64] = //UL = uint32
 
 void SHA256::transform(const unsigned char *message, unsigned int block_nb)
 {
-	uint32 w[64];
-	uint32 wv[8];
-	uint32 t1, t2;
+	uint32 w[64]; //64 uint32 buff
+	uint32 wv[8];  //uint43 8 char buff
+	uint32 t1, t2; //stand alone uints
 	const unsigned char *sub_block;
 	int i;
 	int j;
-	for (i = 0; i < (int)block_nb; i++) {
+	for (i = 0; i < (int)block_nb; i++) {  //what we do is check for avalibility aginst multiplicative 8,16,64 bit cases
+		//as you can see we create a subblock system and pack using SHA F1 F2 Pack32 and f4 for transformative values
 		sub_block = message + (i << 6);
 		for (j = 0; j < 16; j++) {
 			SHA2_PACK32(&sub_block[j << 2], &w[j]);
@@ -46,7 +51,9 @@ void SHA256::transform(const unsigned char *message, unsigned int block_nb)
 		for (j = 0; j < 8; j++) {
 			wv[j] = m_h[j];
 		}
-		for (j = 0; j < 64; j++) {
+		for (j = 0; j < 64; j++) {  //ive stared into the abyss and it stared back
+			//system takes and set t1 /t2 values to the complete compilation of all subsequen related values
+			//and transforms wv array to new off kilter values
 			t1 = wv[7] + SHA256_F2(wv[4]) + SHA2_CH(wv[4], wv[5], wv[6])
 				+ sha256_k[j] + w[j];
 			t2 = SHA256_F1(wv[0]) + SHA2_MAJ(wv[0], wv[1], wv[2]);
@@ -64,7 +71,7 @@ void SHA256::transform(const unsigned char *message, unsigned int block_nb)
 		}
 	}
 }
-
+//inits m_h to index of 8 with referencing code values for translations
 void SHA256::init()
 {
 	m_h[0] = 0x6a09e667;
@@ -81,27 +88,27 @@ void SHA256::init()
 
 void SHA256::update(const unsigned char *message, unsigned int len)
 {
-	unsigned int block_nb;
-	unsigned int new_len, rem_len, tmp_len;
-	const unsigned char *shifted_message;
-	tmp_len = SHA224_256_BLOCK_SIZE - m_len;
-	rem_len = len < tmp_len ? len : tmp_len;
-	memcpy(&m_block[m_len], message, rem_len);
+	unsigned int block_nb; //decleration of block_nb
+	unsigned int new_len, rem_len, tmp_len;  
+	const unsigned char *shifted_message;  //creates a shit message pointer this NEEDS to be a memory assigned const
+	tmp_len = SHA224_256_BLOCK_SIZE - m_len;  //checkslength and mitigates against m_len size
+	rem_len = len < tmp_len ? len : tmp_len;  
+	memcpy(&m_block[m_len], message, rem_len);  //direct memory spot copy
 	if (m_len + len < SHA224_256_BLOCK_SIZE) {
 		m_len += len;
 		return;
 	}
-	new_len = len - rem_len;
-	block_nb = new_len / SHA224_256_BLOCK_SIZE;
-	shifted_message = message + rem_len;
-	transform(m_block, 1);
+	new_len = len - rem_len;  //determinant aginst lengeth versus the rem_length
+	block_nb = new_len / SHA224_256_BLOCK_SIZE; // determinant block size
+	shifted_message = message + rem_len;  // shift of message from location value
+	transform(m_block, 1); // calls transform
 	transform(shifted_message, block_nb);
 	rem_len = new_len % SHA224_256_BLOCK_SIZE;
 	memcpy(m_block, &shifted_message[block_nb << 6], rem_len);
 	m_len = rem_len;
 	m_tot_len += (block_nb + 1) << 6;
 }
-
+//final sets blocks and mem sets and unpacks values for final signiture and setting.
 void SHA256::final(unsigned char *digest)
 {
 	unsigned int block_nb;
@@ -120,7 +127,7 @@ void SHA256::final(unsigned char *digest)
 		SHA2_UNPACK32(m_h[i], &digest[i << 2]);
 	}
 }
-
+//easiest part just creating buffer and initialization of items.
 std::string sha256(std::string input)
 {
 	unsigned char digest[SHA256::DIGEST_SIZE];
